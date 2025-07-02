@@ -127,7 +127,7 @@ def request_json(method: str,
     :raises HTTPError: If the response status code is not 200.
     :return: JSON object containing the response data.
     '''
-    response = requests.request(method, url, headers=headers, data=data, files=files, params = params)
+    response = requests.request(method, url, headers=headers, data=data, files=files, params = params, timeout = 300)
     
     # Check if the response status code is 200 (OK)
     if response.status_code != 200:

@@ -39,14 +39,14 @@ scrapers = [
             FedChicagoScraper,
             FedClevelandScraper,
             FedDallasScraper,
-            FedKansasCityScraper,
+            #FedKansasCityScraper,
             FedMinneapolisScraper,
             FedNewYorkScraper,
             FedSanFranciscoScraper,
             FedPhiladelphiaScraper,
             FedRichmondScraper,
             FedStLouisScraper,
-            IMFScraper,
+            #IMFScraper,
             NBERScraper
             ]
 

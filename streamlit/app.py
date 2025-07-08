@@ -38,7 +38,12 @@ st.write(
 )
 st.write("")
 st.write(
-    "See the source code and replicate the project at: "
+    "This version of the roundup scraper is maintained by the research assistants of the Hutchins Center on Monetary and Fiscal Policy at Brookings. Our code can be found at: "
+    "https://github.com/Hutchins-RAs/roundup"
+)
+st.write("")
+st.write(
+    "See the original source code from Lorae Stojanovic at: "
     "https://github.com/lorae/roundup"
 )
 st.divider()

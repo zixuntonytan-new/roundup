@@ -80,8 +80,8 @@ with st.sidebar.expander(scraper_expander_message, # Display # active scrapers
         # Specify the column widths where the first column is 3 times wider than the second
         col1, col2 = st.columns([3, 1])
         # Write the values to the columns
-        col1.write(row[0])
-        col2.write(row[1])
+        col1.write(row["Source"])
+        col2.write(row["Status"])
 
 
 ########## Main ##########

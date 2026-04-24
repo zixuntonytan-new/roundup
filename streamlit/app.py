@@ -98,8 +98,9 @@ scraper_expander_message = f"{active_scrapers} of {total_scrapers} web scrapers 
 with st.sidebar.expander(scraper_expander_message, expanded=False):
     for _, row in status_df.iterrows():
         col1, col2 = st.columns([3, 1])
-        col1.write(row[0])
-        col2.write(row[1])
+        # Write the values to the columns
+        col1.write(row["Source"])
+        col2.write(row["Status"])
 
 
 ########## Main ##########

@@ -38,11 +38,13 @@ def request_soup(session_args: requests.Request) -> BeautifulSoup:
 
     return soup
 
-def selenium_soup(url: str) -> BeautifulSoup:
+def selenium_soup(url: str, wait_css: str = None) -> BeautifulSoup:
     '''
     Fetches a webpage using Selenium WebDriver and returns its content parsed by BeautifulSoup.
-    
+
     :param url: URL of the webpage to fetch.
+    :param wait_css: Optional CSS selector to wait for before returning. When None, falls back
+                     to the legacy Cleveland behavior (waits for element with id="snippet1").
     :return: BeautifulSoup object containing the parsed page source.
     '''
 
@@ -54,7 +56,7 @@ def selenium_soup(url: str) -> BeautifulSoup:
         # Install ChromeDriver using webdriver_manager for local environment
         chrome_driver_path = ChromeDriverManager().install()
 
-        # Due to a recent update in webdriver_manager, the ChromeDriver path may incorrectly point to a 
+        # Due to a recent update in webdriver_manager, the ChromeDriver path may incorrectly point to a
         # non-executable file ('THIRD_PARTY_NOTICES.chromedriver') instead of the actual 'chromedriver.exe'.
         # The following check ensures that the path is corrected to point to the executable.
         if chrome_driver_path.endswith("THIRD_PARTY_NOTICES.chromedriver"):
@@ -62,11 +64,11 @@ def selenium_soup(url: str) -> BeautifulSoup:
                 "THIRD_PARTY_NOTICES.chromedriver", "chromedriver.exe"
             )
 
-    print(f"Using ChromeDriver at: {chrome_driver_path}")  # Debugging line to check path
+    print(f"Using ChromeDriver at: {chrome_driver_path}")
 
     # Set up ChromeDriver service
     chrome_service = Service(chrome_driver_path)
-    
+
     # Set up Chrome options
     chrome_options = Options()
     options = [
@@ -81,23 +83,31 @@ def selenium_soup(url: str) -> BeautifulSoup:
     for option in options:
         chrome_options.add_argument(option)
 
-    # Initialize WebDriver with the service and options
     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
-    driver.get(url)  # Go to the page
-    time.sleep(5)  # Pause to allow the page to fully load
-    
-    # Use WebDriverWait to wait for a specific element to become available
-    try:
-        element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "snippet1"))
-        )
-        driver.execute_script("arguments[0].scrollIntoView();", element)
-    except Exception as e:
-        print(f"An error occurred while waiting for element: {e}")
-    time.sleep(5)  # Additional pause after scrolling
+    driver.get(url)
+    time.sleep(5)  # Initial load wait
 
-    soup = BeautifulSoup(driver.page_source, 'html.parser')  # Parse page source with BeautifulSoup
-    driver.quit()  # Close the WebDriver
+    if wait_css:
+        # Wait for the caller-specified CSS selector
+        try:
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, wait_css))
+            )
+        except Exception as e:
+            print(f"Timeout waiting for '{wait_css}': {e}")
+    else:
+        # Legacy behavior: wait for Cleveland's #snippet1 element and scroll to it
+        try:
+            element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "snippet1"))
+            )
+            driver.execute_script("arguments[0].scrollIntoView();", element)
+        except Exception as e:
+            print(f"An error occurred while waiting for element: {e}")
+        time.sleep(5)
+
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    driver.quit()
 
     return soup
 

@@ -1,98 +1,124 @@
-from ..generic_scraper import GenericScraper
-from src.scraper.external_requests import request_soup
-import requests
-import feedparser
+"""
+IMF Working Papers scraper.
+
+Uses the Firecrawl API to render the JS-heavy IMF publications search page.
+Requires FIRECRAWL_API_KEY to be set as an environment variable (GitHub secret
+in CI, .env file locally).
+
+If the API key is absent the scraper raises an exception and is marked offline.
+"""
+import os
 import re
+from ..generic_scraper import GenericScraper
+
+_URL = "https://www.imf.org/en/publications/search?when=After&series=IMF+Working+Papers#cf-type=WRKNGPPRS"
+_MAX = 20
+_MONTHS = (
+    r"(?:January|February|March|April|May|June|July|August|"
+    r"September|October|November|December)"
+)
+
 
 class IMFScraper(GenericScraper):
     def __init__(self):
-        super().__init__(source = 'IMF')
-        # Define generic headers to be used later in the class
-        self.headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.112 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
-        }
+        super().__init__(source="IMF")
 
-    # Public method which is called from outside the class.
     def fetch_data(self):
-        '''
-        Sends a GET request to the source's main page and parses the 
-        response using BeautifulSoup to get title, link, and date
-        for each working paper entry. 
-        A secondary GET request is made to each working paper's 
-        landing page and parsed using BeautifulSoup to extract working 
-        paper abstracts, authors, and numbers.
+        api_key = os.getenv("FIRECRAWL_API_KEY")
+        if not api_key:
+            raise Exception("FIRECRAWL_API_KEY not set — IMF scraper skipped")
 
-        :return: A list of dictionaries containing Title, Author, Link, 
-        Abstract, Number and Date for each working paper entry 
-        :rtype: list
-        '''
-        # TODO: Refactor this section using IMF API.
-        # Example URL:
-        # https://www.imf.org/en/Publications/Search#sort=relevancy&numberOfResults=20&f:series=[WRKNGPPRS]&DateTo=12%2F31%2F2024&DateFrom=1%2F1%2F2024
-        url = "https://www.imf.org/en/Publications/RSS?language=eng&series=IMF%20Working%20Papers"
-        f = feedparser.parse(url)
+        from firecrawl import V1FirecrawlApp
 
-        # Initialize `data`
+        app = V1FirecrawlApp(api_key=api_key)
+        result = app.scrape_url(_URL, formats=["markdown"], wait_for=3000)
+        md = result.markdown or ""
+
+        if not md:
+            raise Exception("Firecrawl returned empty markdown for IMF")
+
+        return self._parse(md)
+
+    def _parse(self, md: str) -> list:
+        """
+        Parse Firecrawl markdown. Each block looks like:
+
+          ### [Title](url)
+
+          April 10, 2026
+
+          Author A; Author BAbstract text here...
+
+          Working Papers
+        """
         data = []
-        for entry in f.entries:
-            # Title
-            title = entry.title
+        blocks = re.split(r"\n(?=#{1,4} \[)", md)
 
-            # Link
-            link = entry.link
+        for block in blocks[:_MAX]:
+            try:
+                m = re.search(r"#{1,4} \[(.+?)\]\((https?://[^\)]+)\)", block)
+                if not m:
+                    continue
+                title = m.group(1).strip()
+                url = m.group(2).strip()
+                if "/publications/wp/" not in url.lower():
+                    continue
 
-            # Date
-            date = entry.published[:-14]
+                date_m = re.search(
+                    rf"{_MONTHS}\s+\d{{1,2}},\s+\d{{4}}|\d{{4}}-\d{{2}}-\d{{2}}",
+                    block,
+                )
+                date = date_m.group(0).strip() if date_m else ""
 
-            # Abstract, author, and number are found on the landing pages
-            # for each individual working paper
-            # Bundle the arguments together for requests module
-            session_arguments = requests.Request(method='GET', 
-                                                url=link, 
-                                                headers=self.headers)
-            # Send request and parse soup using BeautifulSoup
-            landing_soup = request_soup(session_arguments)
+                # First non-heading, non-date, non-label content line is author+abstract blob
+                blob = ""
+                for line in block.split("\n"):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if re.match(r"#{1,4} ", line):
+                        continue
+                    if re.match(rf"{_MONTHS}\s+\d", line) or re.match(
+                        r"\d{4}-\d{2}-\d{2}", line
+                    ):
+                        continue
+                    if re.match(r"Working Papers?$", line, re.IGNORECASE):
+                        continue
+                    blob = line
+                    break
 
-            # Abstract. This section of code is brittle. It finds all
-            # elements <p> with class 'pub-desc' as candidate abstracts
-            # and chooses the fourth candidate (index number 3) and 
-            # extracts text. When this script uses an API call in the
-            # future, it will be much less brittle.
-            potential_abstracts = landing_soup.find_all('p', {'class': 'pub-desc'})
-            abstract = potential_abstracts[3].text.strip()
+                # Split authors from abstract at the last semicolon followed by a
+                # lowercase→uppercase boundary (end of last author name)
+                author, abstract = "", blob
+                last_semi = blob.rfind(";")
+                if last_semi >= 0:
+                    tail = blob[last_semi:]
+                    boundary = re.search(r"[a-z]([A-Z])", tail)
+                    if boundary:
+                        cut = last_semi + boundary.start(1)
+                        author = blob[:cut].strip()
+                        abstract = blob[cut:].strip()
 
-            # Author. This section of code is brittle. It finds all
-            # elements <p> with class 'pub-desc' as candidate authors
-            # and chooses the first candidate (index number 0) and 
-            # extracts text. When this script uses an API call in the
-            # future, it will be much less brittle.
-            potential_authors = landing_soup.find_all('p', {'class': 'pub-desc'})
-            raw_author_text = potential_authors[0].text.strip()
-            # Use regex to replace any sequence of whitespace characters (space, 
-            # newline, etc.) with a single space
-            clean_author_text = re.sub(r'\s+', ' ', raw_author_text)
+                abstract = re.sub(
+                    r"\s*Results per page.*$", "", abstract, flags=re.IGNORECASE
+                ).strip()
 
-            # Date. This section of code is brittle. It finds all
-            # elements <p> with class 'pub-desc' as candidate authors
-            # and chooses the second candidate (index number 1) and 
-            # extracts text. When this script uses an API call in the
-            # future, it will be much less brittle.
-            potential_numbers = landing_soup.find_all('p', {'class': 'pub-desc'})
-            raw_number_text = potential_numbers[4].text.strip()
-            # Removing 'Working Paper No. ' from beginning and replace '/'
-            # with '-'
-            clean_number_text = raw_number_text.replace('Working Paper No.', '').replace('/', '-').strip()
+                # Number: last path segment of URL (unique per paper)
+                number = url.rstrip("/").split("/")[-1]
 
-            # Append title, link, date, abstract, author, and number
-            # to `data`
-            data.append({
-                'Title': title,
-                'Link': link,
-                'Date': date,
-                'Abstract': abstract,
-                'Author': clean_author_text,
-                'Number': clean_number_text
-            })
+                if title:
+                    data.append({
+                        "Title": title,
+                        "Author": author,
+                        "Link": url,
+                        "Abstract": abstract,
+                        "Number": number,
+                        "Date": date,
+                    })
+            except Exception as e:
+                print(f"[IMF] entry error: {e}")
+
+        if not data:
+            raise Exception("IMF: parsed markdown but found no working paper entries")
 
         return data

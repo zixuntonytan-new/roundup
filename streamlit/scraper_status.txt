@@ -1,8 +1,8 @@
 BEA,on
-BIS,off
+BIS,on
 BOE,on
 ECB,on
-FED-ATLANTA,off
+FED-ATLANTA,on
 FED-BOARD,on
 FED-BOSTON,on
 FED-BOARD-NOTES,on

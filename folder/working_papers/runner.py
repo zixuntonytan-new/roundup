@@ -30,12 +30,13 @@ from .fed_philadelphia import scrape as scrape_fed_philadelphia
 from .fed_richmond     import scrape as scrape_fed_richmond
 from .fed_san_francisco import scrape as scrape_fed_san_francisco
 from .ecb              import scrape as scrape_ecb
-from .fedinprint import (
-    scrape_boston      as scrape_fed_boston,
-    scrape_kansascity  as scrape_fed_kansas_city,
-    scrape_minneapolis as scrape_fed_minneapolis,
-    scrape_stlouis     as scrape_fed_st_louis,
-)
+# fedinprint scrapers disabled
+# from .fedinprint import (
+#     scrape_boston      as scrape_fed_boston,
+#     scrape_kansascity  as scrape_fed_kansas_city,
+#     scrape_minneapolis as scrape_fed_minneapolis,
+#     scrape_stlouis     as scrape_fed_st_louis,
+# )
 
 # ── Single HTTP request each ───────────────────────────────────────────────────
 CONCURRENT = [
@@ -46,12 +47,12 @@ CONCURRENT = [
     ("FED-ATLANTA",     scrape_fed_atlanta),
     ("FED-BOARD",       scrape_fed_board),
     ("FED-BOARD-NOTES", scrape_fed_board_notes),
-    ("FED-BOSTON",      scrape_fed_boston),
+    # ("FED-BOSTON",      scrape_fed_boston),      # fedinprint disabled
     ("FED-DALLAS",      scrape_fed_dallas),
-    ("FED-KANSASCITY",  scrape_fed_kansas_city),
-    ("FED-MINNEAPOLIS", scrape_fed_minneapolis),
+    # ("FED-KANSASCITY",  scrape_fed_kansas_city),  # fedinprint disabled
+    # ("FED-MINNEAPOLIS", scrape_fed_minneapolis),  # fedinprint disabled
     ("FED-SANFRANCISCO",scrape_fed_san_francisco),
-    ("FED-STLOUIS",     scrape_fed_st_louis),
+    # ("FED-STLOUIS",     scrape_fed_st_louis),     # fedinprint disabled
 ]
 
 # ── Per-paper landing-page requests, 1s sleep each — 3 concurrent ─────────────

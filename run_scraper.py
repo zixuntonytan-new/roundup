@@ -11,17 +11,17 @@ from src.scraper.sites.ecb_scraper import ECBScraper
 from src.scraper.sites.fed_atlanta_scraper import FedAtlantaScraper
 from src.scraper.sites.fed_board_notes_scraper import FedBoardNotesScraper
 from src.scraper.sites.fed_board_scraper import FedBoardScraper
-from src.scraper.sites.fed_boston_scraper import FedBostonScraper
+# from src.scraper.sites.fed_boston_scraper import FedBostonScraper  # fedinprint disabled
 from src.scraper.sites.fed_chicago_scraper import FedChicagoScraper
 from src.scraper.sites.fed_cleveland_scraper import FedClevelandScraper
 from src.scraper.sites.fed_dallas_scraper import FedDallasScraper
-from src.scraper.sites.fed_kansas_city_scraper import FedKansasCityScraper
-from src.scraper.sites.fed_minneapolis_scraper import FedMinneapolisScraper
+# from src.scraper.sites.fed_kansas_city_scraper import FedKansasCityScraper  # fedinprint disabled
+# from src.scraper.sites.fed_minneapolis_scraper import FedMinneapolisScraper  # fedinprint disabled
 from src.scraper.sites.fed_new_york_scraper import FedNewYorkScraper
 from src.scraper.sites.fed_san_francisco_scraper import FedSanFranciscoScraper
 from src.scraper.sites.fed_philadelphia_scraper import FedPhiladelphiaScraper
 from src.scraper.sites.fed_richmond_scraper import FedRichmondScraper
-from src.scraper.sites.fed_st_louis_scraper import FedStLouisScraper
+# from src.scraper.sites.fed_st_louis_scraper import FedStLouisScraper  # fedinprint disabled
 from src.scraper.sites.imf_scraper import IMFScraper
 from src.scraper.sites.nber_scraper import NBERScraper
 
@@ -34,17 +34,17 @@ scrapers = [
             FedAtlantaScraper,
             FedBoardNotesScraper,
             FedBoardScraper,
-            FedBostonScraper,
+            # FedBostonScraper,  # fedinprint disabled
             FedChicagoScraper,
             FedClevelandScraper,
             FedDallasScraper,
-            FedKansasCityScraper,
-            FedMinneapolisScraper,
+            # FedKansasCityScraper,  # fedinprint disabled
+            # FedMinneapolisScraper,  # fedinprint disabled
             FedNewYorkScraper,
             FedSanFranciscoScraper,
             FedPhiladelphiaScraper,
             FedRichmondScraper,
-            FedStLouisScraper,
+            # FedStLouisScraper,  # fedinprint disabled
             IMFScraper,
             NBERScraper,
             ]

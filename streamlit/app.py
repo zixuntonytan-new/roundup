@@ -114,6 +114,9 @@ else:
         (df["est_PubDate"] >= min_date) & (df["Source"].isin(source_selection))
     ]
 
+posted = pd.to_datetime(df_filtered["Date"], errors="coerce")
+df_filtered = df_filtered[posted.isna() | (posted >= current_date - timedelta(days=30))]
+
 source_order = [
     "NBER", "FED-BOARD", "FED-BOARD-NOTES", "FED-ATLANTA", "FED-BOSTON",
     "FED-CHICAGO", "FED-CLEVELAND", "FED-DALLAS", "FED-KANSASCITY",
